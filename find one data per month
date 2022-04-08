@@ -1,0 +1,14 @@
+select * from(
+select left(convert(nvarchar(MAX), TransactionDateTime, 0), 3) as month,PointValue,TransactionDateTime,ROW_NUMBER()OVER (
+                     PARTITION BY left(convert(nvarchar(MAX), TransactionDateTime, 0),3)
+                     ORDER BY transactiondatetime asc
+         	   ) AS [ROW NUMBER]
+			   
+
+from IBMSTrends_510
+where pointkey=18323 and PointValue IS NOT NULL 
+
+--order by TransactionDateTime asc 
+)groups
+where groups.[ROW NUMBER]=1
+order by groups.TransactionDateTime
