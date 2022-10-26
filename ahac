@@ -1,0 +1,38 @@
+USE [510cs]
+GO
+
+/****** Object:  StoredProcedure [dbo].[OI_AHAC_Req]    Script Date: 26/10/2022 4:57:33 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+
+CREATE     PROCEDURE [dbo].[OI_AHAC_Req] 
+	@fromdate datetime
+	,@todate datetime
+AS
+BEGIN
+
+select CONVERT(varchar,startdate at time zone 'UTC' at time zone 'AUS Eastern Standard Time',120) as startdate,
+CONVERT(varchar,enddate at time zone 'UTC' at time zone 'AUS Eastern Standard Time',120) as enddate, datediff(second,startdate,enddate)/3600.0 as hours,
+CONVERT(varchar,m.CreatedDateTime at time zone 'UTC' at time zone 'AUS Eastern Standard Time',120) as createddate,firstname,lastname,stage,iscompleted,groupname,squaremeters
+ --select *
+ from 
+    IBMSAfterHoursRequestScheduleMaster m
+    left join PMTenantUsers pm on pm.UserKey=m.RequesterKey
+    left join UserMaster u on u.UserKey=pm.UserKey 
+    left join PMTenantMaster t on t.TenantKey=pm.TenantKey
+    left join IBMSScheduleGroupMaps ps on ps.ScheduleKey=m.ScheduleKey
+    left join IBMSScheduleZoneMaster z on z.ZoneKey=ps.GroupKey
+    left join LocationMaster l on l.LocationKey=z.LocationKey
+    left join IBMSScheduleFloorLocationMap flm on flm.LocationKey=l.LocationKey
+	where startdate>@fromdate at time zone 'AUS Eastern Standard Time' at time zone 'UTC'
+	and enddate<@todate at time zone 'AUS Eastern Standard Time' at time zone 'UTC'
+	end 
+GO
+
+
