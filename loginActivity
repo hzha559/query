@@ -1,0 +1,18 @@
+/****** Script for SelectTopNRows command from SSMS  ******/
+SELECT TOP (1000)
+fullname,email,
+      CONVERT(DATETIME,[DateTime] AT TIME ZONE 'UTC' AT TIME ZONE 'Cen. Australia Standard Time') as LoginTime
+     
+  FROM [83piriest].[dbo].[UserLoginActivity] l
+  inner join usermaster u on u.userkey=l.userkey
+  where action='Login'
+  and datetime>'2022-10-31'
+  order by LoginTime desc
+
+  select count(fullname) as NumOfLogin,fullname
+  FROM [83piriest].[dbo].[UserLoginActivity] l
+  inner join usermaster u on u.userkey=l.userkey
+    where action='Login'
+  and datetime>'2022-10-31'
+  group by fullname
+  order by NumOfLogin desc
