@@ -1,0 +1,9 @@
+select       [TransactionMessage],assetid,CONVERT(DATETIME,AlarmedTime AT TIME ZONE 'UTC' AT TIME ZONE 'Cen. Australia Standard Time' ) as AlarmedTime
+      ,CONVERT(DATETIME,ClearedTime AT TIME ZONE 'UTC' AT TIME ZONE 'Cen. Australia Standard Time' ) as ClearedTime
+	        ,[AlarmSeverityKey]
+FROM IBMSalarmmaster a
+inner join ibmspoints p on p.pointkey=a.pointkey
+inner join assetmaster am on p.assetkey=am.assetkey
+where alarmedtime>'2022-10-31' ---and alarmedtime<@to1
+---and AlarmSeverityKey=@class1
+order by alarmedtime desc
