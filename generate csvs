@@ -1,0 +1,145 @@
+import asyncio
+import time
+
+from datetime import timedelta,datetime
+from dateutil.relativedelta import relativedelta
+import pymssql
+import csv
+from threading import Thread
+from os.path import exists
+import smtplib, ssl
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email import encoders
+from apscheduler.schedulers.background import BackgroundScheduler
+sched = BackgroundScheduler(daemon=True)
+event={}
+
+def opencsv(filename,heading,data):
+    try:
+        with open(filename, 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(heading)
+            #writer.writerow(["SN", "Name", "Contribution"])
+            for item in data:
+                #writer.writerow([1, "Linus Torvalds", "Linux Kernel"])
+                writer.writerow(item)
+    except Exception as e:
+        print(e)
+        
+def errorlog(err):
+    #log errors
+    try:
+        if exists(str(datetime.now())[0:10]+'log.txt'):
+            with open(str(datetime.now())[0:10]+'log.txt', 'a') as f:
+                f.write(err)
+                f.write('\n')
+        else:
+            with open(str(datetime.now())[0:10]+'log.txt', 'w') as f:
+                f.write(err)
+                f.write('\n')
+    except Exception as e:
+        print(e)
+
+
+
+def send_mail():
+        attachment = "points.csv"
+
+        msg = MIMEMultipart()
+        msg['Subject'] = "Email a csv file"
+        msg['Body'] = "find the attachment"
+        msg['From'] = "donotbeat@gmail.com"
+        msg['To'] = "clare007@gmail.com"
+
+        part = MIMEBase('application', "octet-stream")
+        part.set_payload(open(attachment, "rb").read())
+        encoders.encode_base64(part)
+
+        part.add_header('Content-Disposition', 'attachment', filename=attachment)
+
+        msg.attach(part)
+
+        with smtplib.SMTP('smtp.gmail.com',587) as server:
+            server.ehlo()
+            server.starttls()
+            server.ehlo()
+
+            server.login('donott@gmail.com','me0')
+            server.send_message(msg)
+
+
+
+def initialize():
+            #try:
+            tempdata=[]
+            conn = pymssql.connect(host='10.35.10.103', user='sa', password='0Perational', database='83piriest',login_timeout=10)
+            cur = conn.cursor()
+            query = '''
+SELECT TOP (1000)
+fullname,email,
+      CONVERT(DATETIME,[DateTime] AT TIME ZONE 'UTC' AT TIME ZONE 'Cen. Australia Standard Time') as LoginTime
+     
+  FROM [83piriest].[dbo].[UserLoginActivity] l
+  inner join usermaster u on u.userkey=l.userkey
+  where action='Login'
+  and datetime>'2022-11-30'
+  order by LoginTime desc
+  '''
+            query=query.replace('2022-11-30',str(datetime.utcnow()+relativedelta(months=-1))[0:16])
+            cur.execute(query)
+            result=cur.fetchall()
+            for i in range(len(result)):
+                tempdata.append([])
+                for item in result[i]:
+                    tempdata[i].append(str(item))
+            opencsv('lastLogin.csv',['name','email','last login'],tempdata)
+
+            tempdata=[]
+            query= '''select count(fullname) as NumOfLogin,fullname
+  FROM [83piriest].[dbo].[UserLoginActivity] l
+  inner join usermaster u on u.userkey=l.userkey
+    where action='Login'
+  and datetime>'2022-11-30'
+  group by fullname
+  order by NumOfLogin desc
+            '''
+            query=query.replace('2022-11-30',str(datetime.utcnow()+relativedelta(months=-1))[0:16])
+            cur.execute(query)
+            result=cur.fetchall()
+            for i in range(len(result)):
+                tempdata.append([])
+                for item in result[i]:
+                    tempdata[i].append(str(item))
+            opencsv('loginCount.csv',['count','name'],tempdata)
+
+            tempdata=[]
+            query= '''select       [TransactionMessage],assetid,CONVERT(DATETIME,AlarmedTime AT TIME ZONE 'UTC' AT TIME ZONE 'Cen. Australia Standard Time' ) as AlarmedTime
+      ,CONVERT(DATETIME,ClearedTime AT TIME ZONE 'UTC' AT TIME ZONE 'Cen. Australia Standard Time' ) as ClearedTime
+	        ,[AlarmSeverityKey]
+FROM IBMSalarmmaster a
+inner join ibmspoints p on p.pointkey=a.pointkey
+inner join assetmaster am on p.assetkey=am.assetkey
+where alarmedtime>'2022-11-30' ---and alarmedtime<@to1
+---and AlarmSeverityKey=@class1
+order by alarmedtime desc
+            '''
+            query=query.replace('2022-11-30',str(datetime.utcnow()+relativedelta(months=-1))[0:16])
+            cur.execute(query)
+            result=cur.fetchall()
+            for i in range(len(result)):
+                tempdata.append([])
+                for item in result[i]:
+                    tempdata[i].append(str(item))
+            opencsv('Alarms.csv',['Message','AssetID','AlarmedTime','ClearedTime','Severity'],tempdata)
+            conn.close()
+def test():
+    a=1
+            
+    
+
+if __name__ == '__main__':
+    test()
+    sched.add_job(initialize,'cron',day=1,hour=7,minute=1,second=1,misfire_grace_time=15*60)
+    sched.start()
+
