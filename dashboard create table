@@ -1,0 +1,23 @@
+USE [clarence]
+GO
+
+/****** Object:  Table [dbo].[lift]    Script Date: 30/01/2023 3:46:42 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[lift](
+	[liftName] [nvarchar](200) NOT NULL,
+	[date] [date] NOT NULL,
+	[distance] [bigint] NOT NULL,
+ CONSTRAINT [PK_lift] PRIMARY KEY CLUSTERED 
+(
+	[liftName] ASC,
+	[date] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+
+
